@@ -1,10 +1,5 @@
-# Car Dashboard UI
-
-
-Live demo → [your-username.github.io/car-dashboard](https://your-username.github.io/car-dashboard)
-
+<img width="1030" height="743" alt="image" src="https://github.com/user-attachments/assets/a2d676df-91e9-4a9d-b0d1-8c50d98ecdce" />
 ---
-
 ## Preview
 
 > Dark, responsive dashboard with real-time gauges, system status, media player, and navigation shortcuts.
@@ -60,10 +55,7 @@ All design tokens are CSS variables at the top of the file — easy to retheme:
 ```
 
 ---
-
-## License
-
-MIT — free to use, modify, and distribute.
+<img width="1030" height="743" alt="image" src="https://github.com/user-attachments/assets/da58f5bc-76d6-4431-bbcd-1cea4c671a33" />
 
 ---
 
