@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #0a0a0a;
+    --bg1: #111111;
+    --bg2: #1a1a1a;
+    --bg3: #222222;
+    --bg4: #2a2a2a;
+    --txt: #ffffff;
+    --txt2: #aaaaaa;
+    --txt3: #666666;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --amber: #fb923c;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --accent: #378ADD;
+    --border: rgba(255,255,255,0.07);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: #0d0d0d;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .dash {
+    width: 100%;
+    max-width: 900px;
+    background: var(--bg1);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--bg0);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--txt2); }
+
+  .gear { display: flex; gap: 10px; font-size: 15px; font-weight: 600; }
+  .gear span { color: var(--txt3); cursor: pointer; transition: color .2s; }
+  .gear span.act { color: var(--txt); }
+
+  .batt { display: flex; align-items: center; gap: 7px; }
+  .batt-icon { width: 28px; height: 14px; border: 1.5px solid #777; border-radius: 3px; position: relative; }
+  .batt-icon::after { content:''; position:absolute; right:-5px; top:3px; width:4px; height:6px; background:#777; border-radius:0 2px 2px 0; }
+  .batt-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width .4s, background .4s; }
+  .batt-pct { font-size: 13px; color: var(--txt2); }
+
+  .topbar-center { font-size: 13px; color: var(--txt2); display: flex; align-items: center; gap: 10px; }
+  .topbar-center svg { width: 16px; height: 16px; opacity: 0.6; }
+
+  /* MAIN GRID */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  /* STATS PANEL */
+  .stats {
+    background: var(--bg1);
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    transition: border-color .2s;
+  }
+  .stat-card:hover { border-color: rgba(255,255,255,0.15); }
+  .stat-card.wide { grid-column: span 2; }
+  .stat-label { font-size: 11px; color: var(--txt3); margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .stat-value { font-size: 26px; font-weight: 500; line-height: 1; color: var(--txt); }
+  .stat-unit { font-size: 12px; color: var(--txt3); margin-left: 3px; }
+  .stat-bar { height: 4px; border-radius: 2px; background: var(--bg4); margin-top: 8px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease, background .4s; }
+  .stat-sub { font-size: 11px; color: var(--txt3); margin-top: 5px; }
+
+  .temp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .temp-item { background: var(--bg3); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center; border: 1px solid var(--border); }
+  .temp-item .stat-label { text-align: center; }
+  .temp-item .stat-value { font-size: 22px; }
+
+  /* STATUS PANEL */
+  .status-panel {
+    background: var(--bg1);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .status-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    flex: 1;
+  }
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .status-row:last-child { margin-bottom: 0; }
+  .status-label { font-size: 13px; color: var(--txt2); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 6px rgba(74,222,128,.5); }
+  .dot.warn { background: var(--amber); box-shadow: 0 0 6px rgba(251,146,60,.5); }
+  .dot.err { background: var(--red); box-shadow: 0 0 6px rgba(248,113,113,.5); }
+  .status-val { font-size: 12px; color: var(--txt3); }
+
+  .gear-display { font-size: 48px; font-weight: 300; color: var(--txt); text-align: center; padding: 8px 0; letter-spacing: 4px; }
+  .gear-display span { color: var(--txt3); margin: 0 6px; font-weight: 300; }
+  .gear-display span.act { color: var(--txt); font-weight: 500; }
+
+  /* MEDIA + NAV */
+  .bottom-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+
+  .media-panel {
+    background: var(--bg1);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .album-art {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .album-art svg { width: 20px; height: 20px; fill: white; opacity: 0.9; }
+  .media-info { flex: 1; overflow: hidden; }
+  .media-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .media-artist { font-size: 12px; color: var(--txt3); }
+  .media-controls { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+  .ctrl-btn { background: none; border: none; color: var(--txt3); cursor: pointer; padding: 0; line-height: 1; transition: color .2s; }
+  .ctrl-btn:hover { color: var(--txt); }
+  .ctrl-btn.play { color: var(--txt); }
+  .ctrl-btn svg { width: 18px; height: 18px; }
+
+  .nav-panel {
+    background: var(--bg1);
+    padding: 14px 16px;
+  }
+  .nav-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border-radius: var(--radius-sm);
+    padding: 8px 12px; font-size: 13px; color: var(--txt3);
+    margin-bottom: 10px; cursor: pointer; border: 1px solid var(--border);
+    transition: background .2s;
+  }
+  .nav-search:hover { background: var(--bg4); }
+  .nav-search svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--txt2); padding: 8px;
+    font-size: 12px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px; transition: background .2s, color .2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--bg4); color: var(--txt); }
+  .nav-btn svg { width: 14px; height: 14px; }
+
+  /* CONTROLS PANEL */
+  .controls-panel {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg0);
+  }
+  .climate { display: flex; align-items: center; gap: 8px; }
+  .climate svg { width: 16px; height: 16px; color: var(--blue); }
+  .climate-val { font-size: 15px; font-weight: 500; min-width: 28px; text-align: center; }
+  .climate-arrow { background: none; border: none; color: var(--txt3); cursor: pointer; font-size: 13px; padding: 2px 4px; transition: color .2s; }
+  .climate-arrow:hover { color: var(--txt); }
+
+  .app-icons { display: flex; align-items: center; justify-content: center; gap: 20px; }
+  .app-icon { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--txt3); transition: color .2s; text-decoration: none; }
+  .app-icon:hover { color: var(--txt); }
+  .app-icon.active { color: var(--txt); }
+  .app-icon svg { width: 20px; height: 20px; }
+  .app-icon span { font-size: 10px; }
+
+  /* SLIDERS */
+  .sim-panel {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .sim-label { font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .sim-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .sim-row:last-child { margin-bottom: 0; }
+  .sim-row label { font-size: 12px; color: var(--txt3); min-width: 56px; }
+  .sim-row input[type=range] {
+    flex: 1; -webkit-appearance: none; height: 4px;
+    border-radius: 2px; background: var(--bg4); outline: none; cursor: pointer;
+  }
+  .sim-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(55,138,221,.3);
+  }
+  .sim-row input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: none;
+  }
+  .sim-val { font-size: 12px; color: var(--txt2); min-width: 54px; text-align: right; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    body { padding: 8px; }
+    .dash { border-radius: 14px; }
+    .topbar { padding: 8px 14px; }
+    .topbar-center { display: none; }
+    .main { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; padding: 12px; }
+    .bottom-panels { grid-template-columns: 1fr; }
+    .controls-panel { grid-template-columns: auto 1fr auto; gap: 10px; padding: 10px 14px; }
+    .app-icons { gap: 12px; }
+    .app-icon span { display: none; }
+    .stat-value { font-size: 22px; }
+    .gear-display { font-size: 36px; }
+  }
+
+  @media (max-width: 400px) {
+    .stats { grid-template-columns: 1fr; }
+    .stat-card.wide { grid-column: span 1; }
+    .temp-grid { grid-template-columns: 1fr 1fr; }
+    .app-icons { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="dash">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="gear">
+        <span id="gp" class="act">P</span>
+        <span id="gr">R</span>
+        <span id="gn">N</span>
+        <span id="gd">D</span>
+      </div>
+      <div class="batt">
+        <div class="batt-icon"><div class="batt-fill" id="batt-fill" style="width:90%"></div></div>
+        <span class="batt-pct" id="batt-pct">90%</span>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Easy Entry
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    </div>
+    <div class="topbar-right">
+      <span id="clk">12:00 pm</span>
+      <span>72°F</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT: STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Speed</div>
+        <div><span class="stat-value" id="spd-val">0</span><span class="stat-unit">km/h</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="spd-bar" style="width:0%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Battery range</div>
+        <div><span class="stat-value" id="rng-val">340</span><span class="stat-unit">km</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="rng-bar" style="width:90%;background:var(--green)"></div></div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">Temperature</div>
+        <div class="temp-grid">
+          <div class="temp-item">
+            <div class="stat-label">Inside</div>
+            <div class="stat-value" style="color:var(--blue)">21°</div>
+          </div>
+          <div class="temp-item">
+            <div class="stat-label">Outside</div>
+            <div class="stat-value" style="color:var(--amber)">22°</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">Energy use</div>
+        <div><span class="stat-value" id="nrg-val">0</span><span class="stat-unit">Wh/km</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="nrg-bar" style="width:0%;background:var(--purple)"></div></div>
+        <div class="stat-sub" id="nrg-sub">Idle</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: STATUS -->
+    <div class="status-panel">
+      <div class="stat-card">
+        <div class="gear-display">
+          <span id="g2p" class="act">P</span>
+          <span id="g2r">R</span>
+          <span id="g2n">N</span>
+          <span id="g2d">D</span>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="stat-label" style="margin-bottom:10px">System status</div>
+        <div class="status-row">
+          <div class="status-label"><div class="dot ok" id="eng-dot"></div> Engine</div>
+          <div class="status-val" id="eng-val">Normal</div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><div class="dot ok" id="bat-dot"></div> Battery</div>
+          <div class="status-val" id="bat-val">Healthy</div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><div class="dot ok" id="tyr-dot"></div> Tires</div>
+          <div class="status-val" id="tyr-val">OK</div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><div class="dot ok" id="brk-dot"></div> Brakes</div>
+          <div class="status-val" id="brk-val">Good</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM PANELS -->
+  <div class="bottom-panels">
+    <div class="media-panel">
+      <div class="album-art">
+        <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM21 16c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/></svg>
+      </div>
+      <div class="media-info">
+        <div class="media-title">Vampire</div>
+        <div class="media-artist">Olivia Rodrigo</div>
+        <div class="media-controls">
+          <button class="ctrl-btn" aria-label="Previous">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          </button>
+          <button class="ctrl-btn play" id="play-btn" aria-label="Play">
+            <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <button class="ctrl-btn" aria-label="Next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+          <button class="ctrl-btn" aria-label="Volume">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-panel">
+      <div class="nav-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Navigate to...
+      </div>
+      <div class="nav-btns">
+        <button class="nav-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </button>
+        <button class="nav-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Work
+        </button>
+        <button class="nav-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Nearby
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="controls-panel">
+    <div class="climate">
+      <button class="climate-arrow" onclick="adj(1,-1)">◀</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 10 16H2m15.73-8.27A2 2 0 1 1 19 12H2"/></svg>
+      <span class="climate-val" id="cl1">72</span>
+      <button class="climate-arrow" onclick="adj(1,1)">▶</button>
+    </div>
+    <div class="app-icons">
+      <div class="app-icon active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z"/><path d="M8 17v2M16 17v2"/><circle cx="7" cy="13" r="1" fill="currentColor"/><circle cx="17" cy="13" r="1" fill="currentColor"/></svg>
+        <span>Car</span>
+      </div>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>Phone</span>
+      </div>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12a4 4 0 0 1 8 0"/><path d="M4.93 12a7.07 7.07 0 0 1 14.14 0"/></svg>
+        <span>BT</span>
+      </div>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>Music</span>
+      </div>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>Camera</span>
+      </div>
+    </div>
+    <div class="climate">
+      <button class="climate-arrow" onclick="adj(2,-1)">◀</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 10 16H2m15.73-8.27A2 2 0 1 1 19 12H2"/></svg>
+      <span class="climate-val" id="cl2">72</span>
+      <button class="climate-arrow" onclick="adj(2,1)">▶</button>
+    </div>
+  </div>
+
+  <!-- SIMULATE -->
+  <div class="sim-panel">
+    <div class="sim-label">Simulate driving</div>
+    <div class="sim-row">
+      <label>Speed</label>
+      <input type="range" min="0" max="220" value="0" step="1" id="spd-ctrl">
+      <span class="sim-val" id="spd-lbl">0 km/h</span>
+    </div>
+    <div class="sim-row">
+      <label>Battery</label>
+      <input type="range" min="0" max="100" value="90" step="1" id="bat-ctrl">
+      <span class="sim-val" id="bat-lbl">90%</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let cl1=72, cl2=72;
+  function adj(side, d) {
+    if(side===1){ cl1=Math.max(60,Math.min(85,cl1+d)); document.getElementById('cl1').textContent=cl1; }
+    else { cl2=Math.max(60,Math.min(85,cl2+d)); document.getElementById('cl2').textContent=cl2; }
+  }
+
+  function tick() {
+    const n=new Date(); let h=n.getHours(),m=n.getMinutes(),ap=h>=12?'pm':'am';
+    h=h%12||12;
+    document.getElementById('clk').textContent=h+':'+String(m).padStart(2,'0')+' '+ap;
+  }
+  tick(); setInterval(tick,10000);
+
+  let playing=false;
+  document.getElementById('play-btn').addEventListener('click',function(){
+    playing=!playing;
+    document.getElementById('play-icon').innerHTML=playing
+      ?'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+      :'<polygon points="5 3 19 12 5 21 5 3"/>';
+  });
+
+  const spdCtrl=document.getElementById('spd-ctrl');
+  const batCtrl=document.getElementById('bat-ctrl');
+
+  function update() {
+    const s=parseInt(spdCtrl.value), b=parseInt(batCtrl.value);
+
+    document.getElementById('spd-val').textContent=s;
+    document.getElementById('spd-bar').style.width=Math.round(s/220*100)+'%';
+    document.getElementById('spd-lbl').textContent=s+' km/h';
+
+    const r=Math.round(b*3.78);
+    document.getElementById('rng-val').textContent=r;
+    document.getElementById('rng-bar').style.width=b+'%';
+    document.getElementById('rng-bar').style.background=b<20?'var(--red)':b<40?'var(--amber)':'var(--green)';
+
+    document.getElementById('batt-fill').style.width=b+'%';
+    document.getElementById('batt-fill').style.background=b<20?'var(--red)':b<40?'var(--amber)':'var(--green)';
+    document.getElementById('batt-pct').textContent=b+'%';
+    document.getElementById('bat-lbl').textContent=b+'%';
+
+    const e=s>0?Math.round(120+s*0.8):0;
+    document.getElementById('nrg-val').textContent=e;
+    document.getElementById('nrg-bar').style.width=Math.min(100,Math.round(e/300*100))+'%';
+    document.getElementById('nrg-sub').textContent=s===0?'Idle':s<60?'Efficient':s<120?'Normal':'High draw';
+
+    const gears=['gp','gr','gn','gd'];
+    const g2=['g2p','g2r','g2n','g2d'];
+    gears.forEach(g=>document.getElementById(g).className='');
+    g2.forEach(g=>document.getElementById(g).className='');
+    const active=s>0?'gd':'gp'; const active2=s>0?'g2d':'g2p';
+    document.getElementById(active).className='act';
+    document.getElementById(active2).className='act';
+
+    const engOk=true, batOk=b>10, tyrOk=s<200, brkOk=true;
+    setStatus('eng-dot','eng-val',engOk,'Normal','Check');
+    setStatus('bat-dot','bat-val',batOk,'Healthy','Low');
+    setStatus('tyr-dot','tyr-val',tyrOk,'OK','Warning');
+    setStatus('brk-dot','brk-val',brkOk,'Good','Check');
+  }
+
+  function setStatus(dotId, valId, ok, okText, errText) {
+    const dot=document.getElementById(dotId);
+    dot.className='dot '+(ok?'ok':'err');
+    document.getElementById(valId).textContent=ok?okText:errText;
+  }
+
+  spdCtrl.addEventListener('input',update);
+  batCtrl.addEventListener('input',update);
+  update();
+</script>
+</body>
+</html>
